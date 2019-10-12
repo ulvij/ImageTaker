@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
 
-class ImageUtil private constructor(private var context: Context) {
+class ImageTaker private constructor(private var context: Context) {
 
     class StatusCode {
         companion object {
@@ -42,14 +42,14 @@ class ImageUtil private constructor(private var context: Context) {
         permissionList.add(AppPermissionsRunTime.Permission.READ_EXTERNAL_STORAGE)
     }
 
-    companion object : SingletonHolder<ImageUtil, Context>(::ImageUtil)
+    companion object : SingletonHolder<ImageTaker, Context>(::ImageTaker)
 
-    fun setActivity(activity: Activity): ImageUtil {
+    fun setActivity(activity: Activity): ImageTaker {
         this.activity = activity
         return this
     }
 
-    fun setOperationListener(operationStatusListener: ImageOperationStatusListener): ImageUtil {
+    fun setOperationListener(operationStatusListener: ImageOperationStatusListener): ImageTaker {
         this.operationStatusListener = operationStatusListener
         return this
     }
