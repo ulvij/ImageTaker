@@ -1,0 +1,2 @@
+include ':app', ':imagetaker'
+rootProject.name='ImageTaker'

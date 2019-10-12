@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">ImageTaker</string>
+    <string name="error_when_getting_image_from_camera">There occurred error when getting image from camera</string>
+    <string name="error_image_is_null">Image is null</string>
+</resources>
