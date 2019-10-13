@@ -1,7 +1,7 @@
 # Image Taker
 
-[![star this repo](http://githubbadges.com/star.svg?user=ulvi583&repo=ImageTaker&style=default)](https://github.com/ulvi583/ImageTaker)
-[![fork this repo](http://githubbadges.com/fork.svg?user=ulvi583&repo=ImageTaker&style=default)](https://github.com/ulvi583/ImageTaker/fork)
+[![GitHub release](https://img.shields.io/github/release/Naereen/StrapDown.js.svg)](https://GitHub.com/Naereen/StrapDown.js/releases/)
+
 
 This is a simple Image taker library that makes it easy to take an image from a camera or gallery by getting the responsibility of different situations that are came from the variety of the android versions.
 
