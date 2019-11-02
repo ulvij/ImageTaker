@@ -57,8 +57,12 @@ class ImageTaker private constructor(private var context: Context) {
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == RESULT_OK) {
             when (requestCode) {
-                StatusCode.FROM_CAMERA_FOR_OVER_VERSION_N_REQUEST_ID -> getImageFromCameraByImagePath(imagePath)
-                StatusCode.FROM_CAMERA_FOR_UNDER_VERSION_N_REQUEST_ID -> getImageFromCameraByImageUri(imageUri)
+                StatusCode.FROM_CAMERA_FOR_OVER_VERSION_N_REQUEST_ID -> getImageFromCameraByImagePath(
+                    imagePath
+                )
+                StatusCode.FROM_CAMERA_FOR_UNDER_VERSION_N_REQUEST_ID -> getImageFromCameraByImageUri(
+                    imageUri
+                )
                 StatusCode.FROM_CAMERA_FOR_GALLERY -> getImageFromGalleryByIntentData(data)
             }
         }
@@ -150,11 +154,16 @@ class ImageTaker private constructor(private var context: Context) {
 
             if (lastImage != null) {
                 val imageFile = convertBitmapToFile(lastImage)
-                try {
-                    val bitmap = BitmapFactory.decodeFile(imageFile?.absolutePath)
-                    operationStatusListener.onOperationSuccess(bitmap)
-                } catch (e: Exception) {
-                    operationStatusListener.onOperationFailure(e.message.toString())
+                if (imageFile != null) {
+                    try {
+                        val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
+                        operationStatusListener.setImageFile(imageFile)
+                        operationStatusListener.onOperationSuccess(bitmap)
+                    } catch (e: Exception) {
+                        operationStatusListener.onOperationFailure(e.message.toString())
+                    }
+                } else {
+                    operationStatusListener.onOperationFailure(context.resources.getString(R.string.error_image_is_null))
                 }
             }
 
@@ -174,12 +183,16 @@ class ImageTaker private constructor(private var context: Context) {
         } else {
             getRealPathFromURI(imageUri)
         }
-
-        try {
-            val bitmap = BitmapFactory.decodeFile(imageFile?.absolutePath)
-            operationStatusListener.onOperationSuccess(bitmap)
-        } catch (e: Exception) {
-            operationStatusListener.onOperationFailure(e.message.toString())
+        if (imageFile != null) {
+            try {
+                operationStatusListener.setImageFile(imageFile)
+                val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
+                operationStatusListener.onOperationSuccess(bitmap)
+            } catch (e: Exception) {
+                operationStatusListener.onOperationFailure(e.message.toString())
+            }
+        } else {
+            operationStatusListener.onOperationFailure(context.resources.getString(R.string.error_image_is_null))
         }
     }
 
@@ -203,6 +216,7 @@ class ImageTaker private constructor(private var context: Context) {
             val imageFile = File(imagePath)
             val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
             if (bitmap != null) {
+                operationStatusListener.setImageFile(imageFile)
                 operationStatusListener.onOperationSuccess(bitmap)
             } else {
                 operationStatusListener.onOperationFailure(context.getString(R.string.error_image_is_null))
@@ -253,7 +267,11 @@ class ImageTaker private constructor(private var context: Context) {
      * @param reqHeight The requested height of the resulting bitmap
      * @return The value to be used for inSampleSize
      */
-    private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
+    private fun calculateInSampleSize(
+        options: BitmapFactory.Options,
+        reqWidth: Int,
+        reqHeight: Int
+    ): Int {
         // Raw height and width of image
         val height = options.outHeight
         val width = options.outWidth
@@ -300,7 +318,10 @@ class ImageTaker private constructor(private var context: Context) {
         img = Bitmap.createScaledBitmap(img!!, 1000, 1000, true)
         val ei = ExifInterface(selectedImage.path!!)
 
-        return when (ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+        return when (ei.getAttributeInt(
+            ExifInterface.TAG_ORIENTATION,
+            ExifInterface.ORIENTATION_NORMAL
+        )) {
             ExifInterface.ORIENTATION_ROTATE_90 -> rotateImage(img, 90)
             ExifInterface.ORIENTATION_ROTATE_180 -> rotateImage(img, 180)
             ExifInterface.ORIENTATION_ROTATE_270 -> rotateImage(img, 270)
@@ -320,7 +341,8 @@ class ImageTaker private constructor(private var context: Context) {
     private fun uriToBitmap(selectedFileUri: Uri): Bitmap? {
         var image: Bitmap? = null
         try {
-            val parcelFileDescriptor = context.contentResolver.openFileDescriptor(selectedFileUri, "r")
+            val parcelFileDescriptor =
+                context.contentResolver.openFileDescriptor(selectedFileUri, "r")
             val fileDescriptor = parcelFileDescriptor!!.fileDescriptor
             image = BitmapFactory.decodeFileDescriptor(fileDescriptor)
             parcelFileDescriptor.close()
