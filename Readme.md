@@ -20,7 +20,7 @@ allprojects {
 
 ```
 dependencies {
-   	        implementation 'com.github.Ulvi583:ImageTaker:version'
+   	        implementation 'com.github.Ulvi583:ImageTaker:0.1.1'
    	}
 ```
 
@@ -105,8 +105,10 @@ After this, we can call the camera and gallery everywhere like this
 
 ## Authors
 
-- Ulvi Jabbarli - Android Developer
+- __Ulvi Jabbarli__ - Android Developer
 
+## License
 
+This project is licensed under the MIT License - see the [LICENSE.md](https://github.com/Ulvi583/ImageTaker/blob/master/LICENSE) file for details
 
 
