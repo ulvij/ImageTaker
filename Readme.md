@@ -77,7 +77,7 @@ private var imageInstance = ImageTaker
                 override fun onOperationSuccess(image: Bitmap) {
                     // we can get the image here as a bitmap
 
-		    // you can get the image as a file by calling getImageFile() method here, as well	
+		    // we can get the image as a file by calling getImageFile() method here	
                 }
 
                 override fun onOperationFailure(errorMessage: String) {
