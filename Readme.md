@@ -106,6 +106,10 @@ After this, we can call the camera and gallery everywhere like this
      imageInstance.openGallery() 
 ```
 
+## Used Libraries
+
+- __Android-Image-Cropper__ - [LINK](https://github.com/ArthurHub/Android-Image-Cropper)
+
 ## Authors
 
 - __Ulvi Jabbarli__ - Android Developer
