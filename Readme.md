@@ -20,7 +20,7 @@ allprojects {
 
 ```
 dependencies {
-   	        implementation 'com.github.Ulvi583:ImageTaker:v0.1.2'
+   	        implementation 'com.github.ulvij:ImageTaker:v0.1.2'
    	}
 ```
 
