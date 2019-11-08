@@ -20,7 +20,7 @@ allprojects {
 
 ```
 dependencies {
-   	        implementation 'com.github.ulvij:ImageTaker:v0.1.2'
+   	        implementation 'com.github.ulvij:ImageTaker:v1.0.0'
    	}
 ```
 
@@ -72,6 +72,7 @@ For using, we have to create the instance of ImageTaker and make some little con
 private var imageInstance = ImageTaker
         .getInstance(this)                           // setting context of current state
         .setActivity(this)                           // setting activity
+	.enableCrop()                   	     // making enable the crop feature, which is disabled by default
         .setOperationListener(                       // setting result listener to library and receive result according to state
             object : ImageOperationStatusListener {
                 override fun onOperationSuccess(image: Bitmap) {
