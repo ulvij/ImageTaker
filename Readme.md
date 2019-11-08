@@ -20,7 +20,7 @@ allprojects {
 
 ```
 dependencies {
-   	        implementation 'com.github.Ulvi583:ImageTaker:0.1.1'
+   	        implementation 'com.github.ulvij:ImageTaker:v0.1.2'
    	}
 ```
 
@@ -76,6 +76,8 @@ private var imageInstance = ImageTaker
             object : ImageOperationStatusListener {
                 override fun onOperationSuccess(image: Bitmap) {
                     // we can get the image here as a bitmap
+
+		    // we can get the image as a file by calling getImageFile() method here	
                 }
 
                 override fun onOperationFailure(errorMessage: String) {
