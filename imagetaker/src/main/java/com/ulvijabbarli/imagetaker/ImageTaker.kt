@@ -13,12 +13,14 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
+import com.theartofdev.edmodo.cropper.CropImage
 import com.ulvijabbarli.imagetaker.listener.ImageOperationStatusListener
 import com.ulvijabbarli.imagetaker.permission.AppPermissionsRunTime
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
+
 
 class ImageTaker private constructor(private var context: Context) {
 
@@ -31,6 +33,7 @@ class ImageTaker private constructor(private var context: Context) {
     }
 
     private lateinit var imagePath: String
+    private var cropStatus = false
     private lateinit var imageUri: Uri
     private lateinit var activity: Activity
     private lateinit var operationStatusListener: ImageOperationStatusListener
@@ -54,23 +57,44 @@ class ImageTaker private constructor(private var context: Context) {
         return this
     }
 
+    fun enableCrop(): ImageTaker {
+        cropStatus = true
+        return this
+    }
+
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == RESULT_OK) {
+
             when (requestCode) {
-                StatusCode.FROM_CAMERA_FOR_OVER_VERSION_N_REQUEST_ID -> getImageFromCameraByImagePath(
-                    imagePath
-                )
-                StatusCode.FROM_CAMERA_FOR_UNDER_VERSION_N_REQUEST_ID -> getImageFromCameraByImageUri(
-                    imageUri
-                )
-                StatusCode.FROM_CAMERA_FOR_GALLERY -> getImageFromGalleryByIntentData(data)
+                StatusCode.FROM_CAMERA_FOR_OVER_VERSION_N_REQUEST_ID -> {
+                    if (cropStatus) createCropIntent(imageUri) else getImageByPath(imagePath)
+                }
+                StatusCode.FROM_CAMERA_FOR_UNDER_VERSION_N_REQUEST_ID -> {
+                    if (cropStatus) createCropIntent(imageUri) else getImageByUri(imageUri)
+                }
+                StatusCode.FROM_CAMERA_FOR_GALLERY -> {
+                    if (data?.data == null) {
+                        operationStatusListener.onOperationFailure(context.resources.getString(R.string.error_when_getting_image_from_camera))
+                        return
+                    }
+                    imageUri = data.data!!
+                    if (cropStatus) createCropIntent(imageUri) else getImageByUriForGallery(
+                        imageUri
+                    )
+                }
+                CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE -> {
+                    val result = CropImage.getActivityResult(data)
+                    imageUri = result.uri
+                    getImageByUri(imageUri)
+                }
             }
         }
     }
 
     fun openGallery() {
         if (AppPermissionsRunTime.getInstance().getPermission(permissionList, activity)) {
-            val pickPhoto = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            val pickPhoto =
+                Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
             activity.startActivityForResult(pickPhoto, StatusCode.FROM_CAMERA_FOR_GALLERY)
         }
     }
@@ -78,14 +102,14 @@ class ImageTaker private constructor(private var context: Context) {
     fun openCamera() {
         if (AppPermissionsRunTime.getInstance().getPermission(permissionList, activity)) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-                createIntentForCameraWhenVersionIsUnderN()
+                createCameraIntentForVersionsUnderN()
             } else {
-                createIntentForCameraWhenVersionIsEqualAndOverN()
+                createCameraIntentForVersionNAndOver()
             }
         }
     }
 
-    private fun createIntentForCameraWhenVersionIsEqualAndOverN() {
+    private fun createCameraIntentForVersionNAndOver() {
         val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         // Ensure that there's a camera activity to handle the intent
         if (takePictureIntent.resolveActivity(context.packageManager) != null) {
@@ -99,13 +123,13 @@ class ImageTaker private constructor(private var context: Context) {
 
             // Continue only if the File was successfully created
             if (photoFile != null) {
-                val photoURI = FileProvider.getUriForFile(
+                imageUri = FileProvider.getUriForFile(
                     context,
                     context.packageName + ".fileprovider",
                     photoFile
                 )
 
-                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri)
                 activity.startActivityForResult(
                     takePictureIntent,
                     StatusCode.FROM_CAMERA_FOR_OVER_VERSION_N_REQUEST_ID
@@ -117,7 +141,7 @@ class ImageTaker private constructor(private var context: Context) {
         }
     }
 
-    private fun createIntentForCameraWhenVersionIsUnderN() {
+    private fun createCameraIntentForVersionsUnderN() {
         val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         // Ensure that there's a camera activity to handle the intent
         if (takePictureIntent.resolveActivity(context.packageManager) != null) {
@@ -141,7 +165,13 @@ class ImageTaker private constructor(private var context: Context) {
         }
     }
 
-    private fun getImageFromCameraByImageUri(imageUri: Uri?) {
+    private fun createCropIntent(uri: Uri) {
+        CropImage
+            .activity(uri)
+            .start(activity)
+    }
+
+    private fun getImageByUri(imageUri: Uri?) {
         var lastImage: Bitmap? = null
         if (imageUri != null) {
             try {
@@ -170,15 +200,8 @@ class ImageTaker private constructor(private var context: Context) {
         }
     }
 
-    private fun getImageFromGalleryByIntentData(data: Intent?) {
-        val imageFile: File?
-        val imageUri = data?.data
-        if (imageUri == null) {
-            operationStatusListener.onOperationFailure(context.resources.getString(R.string.error_when_getting_image_from_camera))
-            return
-        }
-
-        imageFile = if (isNewGooglePhotosUri(imageUri)) {
+    private fun getImageByUriForGallery(imageUri: Uri) {
+        val imageFile = if (isNewGooglePhotosUri(imageUri)) {
             getPhotoFile(imageUri)
         } else {
             getRealPathFromURI(imageUri)
@@ -196,22 +219,7 @@ class ImageTaker private constructor(private var context: Context) {
         }
     }
 
-    @Throws(IOException::class)
-    private fun createImageFile(): File {
-        // Create an image file name
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val imageFileName = "JPEG_" + timeStamp + "_"
-        val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        val image = File.createTempFile(
-            imageFileName, /* prefix */
-            ".jpg", /* suffix */
-            storageDir      /* directory */
-        )
-        imagePath = image.absolutePath
-        return image
-    }
-
-    private fun getImageFromCameraByImagePath(imagePath: String) {
+    private fun getImageByPath(imagePath: String) {
         try {
             val imageFile = File(imagePath)
             val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
@@ -227,12 +235,24 @@ class ImageTaker private constructor(private var context: Context) {
 
     }
 
+    @Throws(IOException::class)
+    private fun createImageFile(): File {
+        // Create an image file name
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        val imageFileName = "JPEG_" + timeStamp + "_"
+        val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val image = File.createTempFile(
+            imageFileName, /* prefix */
+            ".jpg", /* suffix */
+            storageDir      /* directory */
+        )
+        imagePath = image.absolutePath
+        return image
+    }
 
     //4 Functions below is for checking rotate degree and rotate if required
     @Throws(IOException::class)
     private fun handleSamplingAndRotationBitmap(selectedImage: Uri): Bitmap? {
-        val maxHeight = 1024
-        val maxWidth = 1024
 
         // First decode with inJustDecodeBounds=true to check dimensions
         val options = BitmapFactory.Options()
@@ -242,7 +262,7 @@ class ImageTaker private constructor(private var context: Context) {
         imageStream!!.close()
 
         // Calculate inSampleSize
-        options.inSampleSize = calculateInSampleSize(options, maxWidth, maxHeight)
+        options.inSampleSize = calculateInSampleSize(options)
 
         // Decode bitmap with inSampleSize set
         options.inJustDecodeBounds = false
@@ -263,15 +283,11 @@ class ImageTaker private constructor(private var context: Context) {
      *
      * @param options   An options object with out* params already populated (run through a decode*
      * method with inJustDecodeBounds==true
-     * @param reqWidth  The requested width of the resulting bitmap
-     * @param reqHeight The requested height of the resulting bitmap
      * @return The value to be used for inSampleSize
      */
-    private fun calculateInSampleSize(
-        options: BitmapFactory.Options,
-        reqWidth: Int,
-        reqHeight: Int
-    ): Int {
+    private fun calculateInSampleSize(options: BitmapFactory.Options): Int {
+        val reqHeight = 1024
+        val reqWidth = 1024
         // Raw height and width of image
         val height = options.outHeight
         val width = options.outWidth
@@ -337,7 +353,6 @@ class ImageTaker private constructor(private var context: Context) {
         return rotatedImg
     }
 
-
     private fun uriToBitmap(selectedFileUri: Uri): Bitmap? {
         var image: Bitmap? = null
         try {
@@ -386,7 +401,6 @@ class ImageTaker private constructor(private var context: Context) {
         } catch (e: Exception) {
             e.printStackTrace()
         }
-
         return null
     }
 

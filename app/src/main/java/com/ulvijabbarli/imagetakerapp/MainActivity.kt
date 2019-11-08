@@ -16,14 +16,15 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        imageInstance = ImageTaker
-            .getInstance(this)
-            .setActivity(this)
+        imageInstance = ImageTaker.getInstance(this)        // getting instance of image taker here
+            .setActivity(this)              // setting current activity here
+            .enableCrop()                   // enable crop here (default status is disabled)
             .setOperationListener(
                 object : ImageOperationStatusListener() {
                     override fun onOperationSuccess(image: Bitmap) {
-                        photo.setImageBitmap(image)
-                        text_path.setText(getImageFile().toString()) // you can get image as File by calling getImageFile method
+                        photo.setImageBitmap(image)             // get image as bitmap here
+                        text_path.text =
+                            getImageFile().toString()           // you can get image as file by calling getImageFile method
                     }
 
                     override fun onOperationFailure(errorMessage: String) {
