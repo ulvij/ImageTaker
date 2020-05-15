@@ -108,7 +108,7 @@ After this, we can call the camera and gallery everywhere like this
 
 ## Used Libraries
 
-- __Android-Image-Cropper__ - [LINK](https://github.com/ArthurHub/Android-Image-Cropper)
+- __[Android-Image-Cropper](https://github.com/ArthurHub/Android-Image-Cropper)__
 
 ## Authors
 
